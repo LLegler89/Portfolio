@@ -57,14 +57,14 @@ model = models.Sequential([
 model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
 # Train the model
-model.fit(X_train, y_train, epochs=10, validation_data=(X_test, y_test))
+history = model.fit(X_train, y_train, epochs=10, validation_data=(X_test, y_test))
 
 # Evaluate the model
 y_pred = np.argmax(model.predict(X_test), axis=-1)
 print(classification_report(y_test, y_pred, target_names=label_encoder.classes_))
 
 
-# Load and preprocess the new image
+# Load and preprocess a test image 
 def load_and_preprocess_image(img_path):
     img = cv2.imread(img_path)
     img = cv2.resize(img, (128, 128))
@@ -83,3 +83,45 @@ predicted_class = np.argmax(prediction)
 predicted_label = label_encoder.classes_[predicted_class]
 
 print(f'The model predicts: {predicted_label}')
+
+
+# Visualize
+
+import matplotlib.pyplot as plt
+
+# Plot training & validation loss values
+plt.plot(history.history['loss'])
+plt.plot(history.history['val_loss'])
+plt.title('Model loss')
+plt.ylabel('Loss')
+plt.xlabel('Epoch')
+plt.legend(['Train', 'Validation'], loc='upper left')
+plt.show()
+
+# Create a confusion matrix
+
+plt.plot(history.history['accuracy'])
+plt.plot(history.history['val_accuracy'])
+plt.title('Model accuracy')
+plt.ylabel('Accuracy')
+plt.xlabel('Epoch')
+plt.legend(['Train', 'Validation'], loc='upper left')
+plt.show()
+
+# Feature map visualization 
+
+from tensorflow.keras.models import Model
+
+# First we will choose a layer to visualize
+layer_to_visualize = model.layers[0]
+
+# Creating a model that outputs the layer's output
+activation_model = Model(inputs=model.input, outputs=layer_to_visualize.output)
+
+# Get the activation of the layer for a sample image
+activation = activation_model.predict(new_img)
+
+# Visualize the feature maps
+plt.imshow(activation[0, :, :, 0], cmap='viridis')
+plt.title('Feature Map')
+plt.show()
