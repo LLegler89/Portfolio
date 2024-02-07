@@ -1,5 +1,5 @@
 # This function requires 2 inputs with 2 optional arguments
-# Required = Path to plasmid sequences (fasta or .seq directory)
+# Required = Path to plasmid sequences (fasta or .seq directory, the tool will determine the filetype and pipeline appropriately)
 # optional = 3' and 5' Flanking sequences on the plasmid to check for insertion or deletion of bp at the cloning site during ligation.
 
 def clone_check(seq_filepath, guide_filepath, output_directory, _3_prime="", _5_prime=""):
