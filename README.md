@@ -1,5 +1,3 @@
-Why should you hire me?
-
 With a blend of technical proficiency, extensive professional experience, and a commitment to community involvement, I offer a diverse skill set that positions me as a valuable asset in the fields of bioinformatics and data science.
 
 Technical Skills:
