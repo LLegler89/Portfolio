@@ -1,0 +1,32 @@
+/* Load data */
+proc import datafile="your_data.csv" out=mydata replace;
+    getnames=yes;
+run;
+
+/* Define macro to calculate summary statistics */
+%macro summary_stats(data=, var=);
+    proc sql noprint;
+        select count(*) as N,
+               mean(&var.) as Mean,
+               std(&var.) as StdDev,
+               min(&var.) as Min,
+               max(&var.) as Max
+        from &data.;
+    quit;
+%mend;
+
+/* Data preprocessing */
+data mydata_prep;
+    set mydata;
+    /* Check for missing values */
+    if missing(var1) then var1 = 0; /* Example of imputation */
+run;
+
+/* Call macro to calculate summary statistics */
+%summary_stats(data=mydata_prep, var=var1);
+
+/* Data visualization */
+proc sgplot data=mydata_prep;
+    scatter x=var1 y=var2;
+    title "Scatter plot of Var1 vs. Var2";
+run;
