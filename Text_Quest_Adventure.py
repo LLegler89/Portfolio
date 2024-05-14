@@ -2,9 +2,9 @@ import random
 import tkinter as tk
 
 class_modifiers = {
-    "Rogue": {"Attack": 1, "Speed": 3},
-    "Barbarian": {"Attack": 3, "Speed": 1},
-    "Fighter": {"Attack": 2, "Speed": 2}
+    "Rogue": {"Attack": 2, "Speed": 5, "Defense":2},
+    "Barbarian": {"Attack": 4, "Speed": 2, "Defense":3},
+    "Fighter": {"Attack": 3, "Speed": 3, "Defense":3}
 }
 
 class Character:
@@ -14,40 +14,51 @@ class Character:
         self.stats = {
             "Attack": 10,
             "Speed": 10,
-            "HP": 100,            "Exp": 0,  # Experience points
+            "Defense": 5,
+            "HP": 100,
+            "Exp": 0,  # Experience points
             "Level": 1,
         }
         self.inventory = []
 
     def gain_exp(self, enemy_level):
         # Calculate experience based on level ratio
-        exp_gain = int((self.stats["Level"] / enemy_level) * 10)
+        exp_gain = int(enemy_level/(self.stats["Level"]) * 10)
         self.stats["Exp"] += exp_gain
         print(f"You gained {exp_gain} experience points!")
-        self.check_level_up(self.char_class)
+        self.check_level_up()
 
-    def check_level_up(self,char_class):
-        # Define the experience required per level (adjust as needed)
-        exp_to_level = [0, 10, 50, 100, 200, 300, 600, 950]  # Experience needed for each level
+    def check_level_up(self):
+    # Define the experience required per level (adjust as needed)
+      exp_to_level = [0, 10, 50, 100, 200, 300, 600, 950]  # Experience needed for each level
 
-        if self.stats["Exp"] >= exp_to_level[self.stats["Level"]]:
-            self.stats["Level"] += 1
-            print(f"Congratulations! You've leveled up to {self.stats['Level']}.")
-        self.char_class = None
-        self.inventory = []
+      if self.stats["Exp"] >= exp_to_level[self.stats["Level"]]:
+         self.stats["Level"] += 1
+         print(f"Congratulations! You've leveled up to {self.stats['Level']}.")
 
-        if char_class in ["Rogue", "Barbarian", "Fighter"]:
-            self.char_class = char_class
-            modifiers = class_modifiers[char_class]
-            for stat, modifier in modifiers.items():
-                self.stats[stat] += modifier
-        else:
-            print("Invalid character class.")
+      if self.char_class in ["Rogue", "Barbarian", "Fighter"]:
+        modifiers = class_modifiers[self.char_class]
+        for stat, modifier in modifiers.items():
+            self.stats[stat] += modifier
+
+      print("\nYour new stats are:")
+      for stat, value in self.stats.items():
+        print(f"{stat}: {value}")
+
+      else:
+        pass
 
     def Attack(self, target):
-        damage = self.stats['Attack']
+        damage = self.stats['Attack'] - target.stats['Defense']
+        if damage < 0:
+            damage = 0
         target.stats['HP'] -= damage
         print(f"{self.name} Attacks {target.name} for {damage} damage!")
+    def special_attack(self, target):
+        damage = self.stats['Attack'] * 1.5 - target.stats['Defense']
+        if damage < 0:
+            damage = 0
+        target.stats['HP'] -= damage
 
     def addItem(self, item):
         self.inventory.append(item)
@@ -159,33 +170,51 @@ def start_game():
 
 
 def battle_loop(player, enemies):
+    special_used = False
     while True:
         characters = [player] + enemies
         characters.sort(key=lambda char: char.stats['Speed'], reverse=True)
-        player = player
         for character in characters:
             if character.stats['HP'] <= 0:
                 continue
             if character is player:
+                print(f"\n{player.name} (Level {player.stats['Level']}, HP: {player.stats['HP']})")
                 print("Enemies:")
                 for i, enemy in enumerate(enemies):
                     if enemy.stats['HP'] > 0:
                         print(f"{i+1}. {enemy.name} (HP: {enemy.stats['HP']})")
                     if enemy.stats['HP'] < 0:
                       player.gain_exp(enemy.stats['Level'])
-                action = input("Attack (a), Potion (p), Block (b), Dodge (d): ").lower()
-                if action == 'a':
-                    while True:
-                        try:
-                            target_index = int(input("Choose a target: ")) - 1
-                            if 0 <= target_index < len(enemies) and enemies[target_index].stats['HP'] > 0:
-                                target = enemies[target_index]
-                                break
-                            else:
-                                print("Invalid target.")
-                        except ValueError:
-                            print("Invalid input. Please enter a number.")
-                    character.Attack(target)
+                while True:
+                    action = input("Attack (a), Potion (p), Special (s), Run (r): ").lower()
+                    if action == 'a':
+                        while True:
+                            try:
+                                target_index = int(input("Choose a target: ")) - 1
+                                if 0 <= target_index < len(enemies) and enemies[target_index].stats['HP'] > 0:
+                                    target = enemies[target_index]
+                                    break
+                                else:
+                                    print("Invalid target.")
+                            except ValueError:
+                                print("Invalid input. Please enter a number.")
+                        character.Attack(target)
+                        break
+                    elif action == 's' and not special_used:
+                        special_used = True
+                        for enemy in enemies:
+                            if enemy.stats['HP'] > 0:
+                                character.special_attack(enemy)
+                        break
+                    elif action == 's' and special_used:
+                        print("Special attack has already been used this battle.")
+                    elif action == 'r':
+                        print("You have fled the battle!")
+                        return
+                    else:
+                        print("Invalid command. Please try again.")
+            if all(enemy.stats['HP'] <= 0 for enemy in enemies):
+                return "win"
             else:  # Enemy turn
                 target = player
                 character.Attack(target)
@@ -194,13 +223,8 @@ def battle_loop(player, enemies):
                     print(f"{target.name} the {target.char_class} blocks and takes reduced damage ({damage})!")
                 if target.dodge():
                     print(f"{target.name} the {target.char_class} dodges the Attack!")
-
-        # Check win/loss
-        if all(enemy.stats['HP'] <= 0 for enemy in enemies):
-            print("You win!")
-            return 'win'
-        if player.stats['HP'] <= 0:
-            return 'loss'
+                if target.stats['HP'] <= 0:
+                    return "loss"
 
 if __name__ == "__main__":
     start_game()
